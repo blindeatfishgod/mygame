@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>迷失在雨夜</title>
+  <style>
+    /* ── 整体页面 ── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #0f0f12;
+      font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      color: #d4cfc8;
+      padding: 24px;
+    }
+
+    /* ── 游戏主容器 ── */
+    #game {
+      width: 100%;
+      max-width: 560px;
+    }
+
+    /* ── 标题 ── */
+    h1 {
+      font-size: 1.1rem;
+      font-weight: 400;
+      letter-spacing: 0.3em;
+      color: #888;
+      margin-bottom: 48px;
+      text-align: center;
+    }
+
+    /* ── 故事文字区域 ── */
+    #story {
+      font-size: 1.05rem;
+      line-height: 2;
+      color: #ccc8c0;
+      min-height: 120px;
+      margin-bottom: 40px;
+      white-space: pre-line; /* 支持换行 */
+    }
+
+    /* ── 选项按钮区域 ── */
+    #choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── 单个选项按钮 ── */
+    .choice-btn {
+      background: none;
+      border: 1px solid #333;
+      color: #aaa;
+      font-family: inherit;
+      font-size: 0.95rem;
+      padding: 14px 20px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+      letter-spacing: 0.05em;
+    }
+
+    .choice-btn:hover {
+      border-color: #888;
+      color: #eee;
+    }
+
+    /* ── 结局显示 ── */
+    #ending {
+      display: none; /* 默认隐藏 */
+      margin-top: 40px;
+      padding: 24px;
+      border: 1px solid #2a2a2a;
+      color: #888;
+      font-size: 0.9rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+    }
+
+    /* ── 重玩按钮 ── */
+    #restart-btn {
+      display: none; /* 默认隐藏 */
+      margin-top: 32px;
+      background: none;
+      border: none;
+      color: #555;
+      font-family: inherit;
+      font-size: 0.85rem;
+      cursor: pointer;
+      letter-spacing: 0.15em;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    #restart-btn:hover { color: #aaa; }
+  </style>
+</head>
+<body>
+
+<div id="game">
+  <h1>迷失在雨夜</h1>
+  <div id="story"></div>
+  <div id="choices"></div>
+  <div id="ending"></div>
+  <button id="restart-btn" onclick="goTo('start')">重新开始</button>
+</div>
+
+<script>
+  // ============================================================
+  //  游戏数据
+  //  每一个"场景"包含：
+  //    story   — 显示的文字
+  //    choices — 选项列表，每个选项有文字(text)和跳转目标(next)
+  //    ending  — （可选）如果有这个字段，说明这是一个结局
+  // ============================================================
+
+  const scenes = {
+
+    start: {
+      story: "你在一个陌生的小镇，雨下得很大。\n\n前方有一栋亮着灯的房子，旁边有一个破旧的电话亭。",
+      choices: [
+        { text: "走进房子", next: "house" },
+        { text: "走进电话亭", next: "phonebooth" }
+      ]
+    },
+
+    house: {
+      story: "你推开门，里面坐着一位老人，他抬头看了你一眼。\n\n「你来得正好，帮我找一样东西吧。」",
+      choices: [
+        { text: "答应老人", next: "ending_a" },
+        { text: "转身离开", next: "ending_b" }
+      ]
+    },
+
+    phonebooth: {
+      story: "电话亭里有一部老式电话，它突然自己响了。\n\n你犹豫了一下，拿起了听筒。",
+      choices: [
+        { text: "说「你好」", next: "ending_c" },
+        { text: "默默挂掉", next: "ending_b" }
+      ]
+    },
+
+    ending_a: {
+      story: "你帮老人找到了一枚戒指，藏在地板缝里。\n\n老人眼眶红了。「这是我妻子的，她走了二十年了。」\n\n你在这个小镇住了下来。",
+      ending: "结局 A · 留下来的人",
+      choices: []
+    },
+
+    ending_b: {
+      story: "你离开了，雨停了，你搭上了最后一班车。\n\n这个小镇，你再也没有回来过。",
+      ending: "结局 B · 过客",
+      choices: []
+    },
+
+    ending_c: {
+      story: "「喂……你能听到我吗？」是个年轻女人的声音。\n\n「我在镇子东边的仓库里，我迷路了。」\n\n你找到了她，她叫阿澄，你们后来成了朋友。",
+      ending: "结局 C · 意外的相遇",
+      choices: []
+    }
+
+  };
+
+  // ============================================================
+  //  渲染函数：根据场景 id 更新页面内容
+  // ============================================================
+
+  function goTo(sceneId) {
+    const scene = scenes[sceneId];
+
+    // 更新故事文字
+    document.getElementById("story").textContent = scene.story;
+
+    // 更新选项按钮
+    const choicesDiv = document.getElementById("choices");
+    choicesDiv.innerHTML = ""; // 先清空
+    scene.choices.forEach(choice => {
+      const btn = document.createElement("button");
+      btn.className = "choice-btn";
+      btn.textContent = choice.text;
+      btn.onclick = () => goTo(choice.next);
+      choicesDiv.appendChild(btn);
+    });
+
+    // 处理结局
+    const endingDiv = document.getElementById("ending");
+    const restartBtn = document.getElementById("restart-btn");
+    if (scene.ending) {
+      endingDiv.textContent = scene.ending;
+      endingDiv.style.display = "block";
+      restartBtn.style.display = "block";
+    } else {
+      endingDiv.style.display = "none";
+      restartBtn.style.display = "none";
+    }
+  }
+
+  // 游戏从 start 场景开始
+  goTo("start");
+
+</script>
+</body>
+</html>
