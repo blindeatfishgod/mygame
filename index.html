@@ -1,208 +1,464 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>迷失在雨夜</title>
-  <style>
-    /* ── 整体页面 ── */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七日</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400&family=Noto+Sans+SC:wght@300&display=swap');
 
-    body {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #0f0f12;
-      font-family: "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
-      color: #d4cfc8;
-      padding: 24px;
-    }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── 游戏主容器 ── */
-    #game {
-      width: 100%;
-      max-width: 560px;
-    }
+  :root {
+    --bg: #0c0c0e;
+    --text: #c8c3bb;
+    --text-dim: #6a6560;
+    --text-faint: #3a3835;
+    --border: #1e1c1a;
+    --aside: #504a44;
+  }
 
-    /* ── 标题 ── */
-    h1 {
-      font-size: 1.1rem;
-      font-weight: 400;
-      letter-spacing: 0.3em;
-      color: #888;
-      margin-bottom: 48px;
-      text-align: center;
-    }
+  html, body {
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Serif SC', 'Songti SC', STSong, serif;
+    font-weight: 300;
+  }
 
-    /* ── 故事文字区域 ── */
-    #story {
-      font-size: 1.05rem;
-      line-height: 2;
-      color: #ccc8c0;
-      min-height: 120px;
-      margin-bottom: 40px;
-      white-space: pre-line; /* 支持换行 */
-    }
+  body {
+    display: flex;
+    justify-content: center;
+    padding: 60px 24px 100px;
+  }
 
-    /* ── 选项按钮区域 ── */
-    #choices {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+  #app { width: 100%; max-width: 600px; }
 
-    /* ── 单个选项按钮 ── */
-    .choice-btn {
-      background: none;
-      border: 1px solid #333;
-      color: #aaa;
-      font-family: inherit;
-      font-size: 0.95rem;
-      padding: 14px 20px;
-      text-align: left;
-      cursor: pointer;
-      transition: border-color 0.2s, color 0.2s;
-      letter-spacing: 0.05em;
-    }
+  #day-label {
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.38em;
+    color: var(--text-faint);
+    margin-bottom: 48px;
+  }
 
-    .choice-btn:hover {
-      border-color: #888;
-      color: #eee;
-    }
+  #story {
+    font-size: 1rem;
+    line-height: 2.1;
+    color: var(--text);
+    white-space: pre-wrap;
+    margin-bottom: 48px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.55s ease, transform 0.55s ease;
+  }
 
-    /* ── 结局显示 ── */
-    #ending {
-      display: none; /* 默认隐藏 */
-      margin-top: 40px;
-      padding: 24px;
-      border: 1px solid #2a2a2a;
-      color: #888;
-      font-size: 0.9rem;
-      letter-spacing: 0.1em;
-      text-align: center;
-    }
+  #story.visible { opacity: 1; transform: translateY(0); }
 
-    /* ── 重玩按钮 ── */
-    #restart-btn {
-      display: none; /* 默认隐藏 */
-      margin-top: 32px;
-      background: none;
-      border: none;
-      color: #555;
-      font-family: inherit;
-      font-size: 0.85rem;
-      cursor: pointer;
-      letter-spacing: 0.15em;
-      text-decoration: underline;
-      text-underline-offset: 4px;
-    }
+  #story em {
+    color: var(--aside);
+    font-style: italic;
+  }
 
-    #restart-btn:hover { color: #aaa; }
-  </style>
+  #choices {
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.45s ease 0.25s;
+  }
+
+  #choices.visible { opacity: 1; }
+
+  .choice-btn {
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 300;
+    font-size: 0.92rem;
+    line-height: 2;
+    padding: 20px 0;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.2s, padding-left 0.25s;
+    white-space: pre-wrap;
+  }
+
+  .choice-btn:last-child { border-bottom: 1px solid var(--border); }
+  .choice-btn:hover { color: var(--text); padding-left: 12px; }
+
+  .choice-btn.opt-c {
+    color: var(--text-faint);
+    font-style: italic;
+    font-size: 0.82rem;
+  }
+  .choice-btn.opt-c:hover { color: var(--text-dim); padding-left: 6px; }
+
+  #restart {
+    display: none;
+    margin-top: 60px;
+    background: none;
+    border: none;
+    color: var(--text-faint);
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 0.7rem;
+    letter-spacing: 0.25em;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  #restart:hover { color: var(--text-dim); }
+
+  .confrontation #story { color: var(--text-dim); font-style: italic; }
+</style>
 </head>
 <body>
-
-<div id="game">
-  <h1>迷失在雨夜</h1>
+<div id="app">
+  <div id="day-label"></div>
   <div id="story"></div>
   <div id="choices"></div>
-  <div id="ending"></div>
-  <button id="restart-btn" onclick="goTo('start')">重新开始</button>
+  <button id="restart" onclick="startGame()">— 重新开始 —</button>
 </div>
 
 <script>
-  // ============================================================
-  //  游戏数据
-  //  每一个"场景"包含：
-  //    story   — 显示的文字
-  //    choices — 选项列表，每个选项有文字(text)和跳转目标(next)
-  //    ending  — （可选）如果有这个字段，说明这是一个结局
-  // ============================================================
+// ══════════════════════════════════════
+//  游戏数据
+//  scores: [重量, 轻盈, 留下, 消失]
+// ══════════════════════════════════════
 
-  const scenes = {
+const DAYS = [
+  {
+    label: '第一日',
+    story: `"我觉得太吵了。"
 
-    start: {
-      story: "你在一个陌生的小镇，雨下得很大。\n\n前方有一栋亮着灯的房子，旁边有一个破旧的电话亭。",
-      choices: [
-        { text: "走进房子", next: "house" },
-        { text: "走进电话亭", next: "phonebooth" }
-      ]
-    },
+话音刚落，世界被挤爆了。
 
-    house: {
-      story: "你推开门，里面坐着一位老人，他抬头看了你一眼。\n\n「你来得正好，帮我找一样东西吧。」",
-      choices: [
-        { text: "答应老人", next: "ending_a" },
-        { text: "转身离开", next: "ending_b" }
-      ]
-    },
+不是那种电影里的爆炸，没有慢镜头，没有主角捂着耳朵的特写。就是突然什么都碎了，变成了一团无序，混沌，七彩，泛着恶心的油光的糊糊——像是有人把过去几十亿年积攒下来的所有声音、所有颜色、所有同时在六十八个城市里发生的所有鸡毛蒜皮，统统揉进了同一个房间，然后啪，关灯。
 
-    phonebooth: {
-      story: "电话亭里有一部老式电话，它突然自己响了。\n\n你犹豫了一下，拿起了听筒。",
-      choices: [
-        { text: "说「你好」", next: "ending_c" },
-        { text: "默默挂掉", next: "ending_b" }
-      ]
-    },
+电视机是最后一批死的。
 
-    ending_a: {
-      story: "你帮老人找到了一枚戒指，藏在地板缝里。\n\n老人眼眶红了。「这是我妻子的，她走了二十年了。」\n\n你在这个小镇住了下来。",
-      ending: "结局 A · 留下来的人",
-      choices: []
-    },
+无数个房间里的无数个电视机死在了不同的脑残广告里——有一台死在了脱毛仪，有一台死在了一个反复说"非常感谢非常感谢"的男人脸上，有一台死在了某种果冻布丁，配色是那种叫人头皮发麻的荧光橙。偏偏你这一台还在播着某一天的天气预报。不知道是哪一天的，播音员的嘴巴在动，声音还在，但你已经分不清他说的是今天还是一百年前的明天。`,
+    choices: [
+      { text: `看一下吧。为什么不呢？都已经看了几万年了。反正也没别的事。坐下，好好看，就当最后一件要完成的事情。\n（到底过去多久了？快点坐下。不，先把脚上的鞋脱了，脱了才算真的坐下。）`, scores: [1,0,1,0] },
+      { text: `该死的，他骗我！早说了会下雨，早说了，我带伞了吗！没有，我就知道没有！\n（什么叫明天下雨了？明天是哪个明天？你知道你在说什么吗！）`, scores: [0,1,0,1] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+  {
+    label: '第二日',
+    story: `结果到最后也没人成功通过舔屏幕尝到照片里的味道，或者把鼻子伸进摄像头里闻闻鲱鱼罐头的臭味儿。
 
-    ending_b: {
-      story: "你离开了，雨停了，你搭上了最后一班车。\n\n这个小镇，你再也没有回来过。",
-      ending: "结局 B · 过客",
-      choices: []
-    },
+这是一种遗憾，你觉得。技术发展了这么多年，卫星上了天，火箭拍卖了，人造肉做出来了，可是你还是没办法隔着屏幕闻到那碗葱花面的味道。那碗面。那碗具体的面，在某个具体的冬天，某个具体的中午，被某个你记得很清楚的手，放在了一张你已经记不清楚的桌子上。应该是圆的，桌子。或者方的。
 
-    ending_c: {
-      story: "「喂……你能听到我吗？」是个年轻女人的声音。\n\n「我在镇子东边的仓库里，我迷路了。」\n\n你找到了她，她叫阿澄，你们后来成了朋友。",
-      ending: "结局 C · 意外的相遇",
-      choices: []
-    }
+真是让那些卖香水的人多赚了钱。
 
-  };
+不过也无所谓了。屏幕都碎了。`,
+    choices: [
+      { text: `那干脆扔了吧。一起扔。碎的，没碎的，还在保修期内的，全扔了。扔完了轻松，轻松了以后再说以后的事。\n（另外几个也想扔。对，那个也扔。还有那个，那个是什么来着，也扔了。）`, scores: [0,1,0,1] },
+      { text: `不要，不要，不要，不行，你不能扔，超市永久打折大甩卖你也舍不得扔的，当年抢购的时候挤掉了一颗门牙，为了这个东西，门牙啊！我要把脸埋进垃圾桶里，再吸几口尾气。等一下，等一下，先想清楚。\n（你有没有舔过柏油马路？我舔过。上面什么味道都有。）`, scores: [1,0,1,0] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+  {
+    label: '第三日',
+    story: `一切开始于漆黑一片。
 
-  // ============================================================
-  //  渲染函数：根据场景 id 更新页面内容
-  // ============================================================
+不知道是哪个笨蛋把所有的地方都堵上了，进不来，更出不去。墙是软的，踢一脚会颤，像果冻，像那种被放了太久开始回潮的软糖，踢进去就陷进去，拔出来的时候带着一股甜腻的阻力。你踢了很久。什么都没有发生。然后你停下来，因为听到了什么。
 
-  function goTo(sceneId) {
-    const scene = scenes[sceneId];
+谁在唱歌？
 
-    // 更新故事文字
-    document.getElementById("story").textContent = scene.story;
+歌。曲子。是有人在哼，还是这堵软墙本身在发声？音调很低，低到你不确定自己是用耳朵听见的还是用某个别的什么器官感受到的。旋律很短，像是一段被截断的东西，从中间开始，到中间结束，没有头，没有尾，循环，循环，循环——`,
+    choices: [
+      { text: `带我一个！等一下等一下，我什么都会，我会写词，写赋格，写交响乐，写三重奏，写摇滚，还会马林巴琴，我练过的，我真的练过，虽然中途放弃了，但基础是有的，带我走！\n（真牛逼！厉害了！继续！还有什么？长笛呢？单簧管呢？）`, scores: [0,1,1,0] },
+      { text: `……是谁？出来。\n（快出来，我好害怕，快来陪陪我，你在哪里，你在哪里，我这里什么都没有，只有软墙，快来——）`, scores: [1,0,0,1] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+  {
+    label: '第四日',
+    story: `没有人教过你怎么走路。一定是某一天，膝盖忽然弯了，脚忽然落地了，就这样了。没有人给你颁奖，没有人拍照，世界也没有因此多转半圈。但你就是记住了。记住了那种地面的硬度从鞋底传上来，记住了重心前倾再前倾再前倾，一直倾到下一只脚不得不出来接住你。其实走路就是一直在倒，只是倒得来得及。`,
+    choices: [
+      { text: `好像要先迈左脚。\n（右边的那是什么东西？不对，先走，别看，走，走，为什么停下来了，是你的脚还是我的脚——）`, scores: [1,0,1,0] },
+      { text: `就不能用飞的？装个喷气发动机的事，保你飞到九霄云外。\n（最好是个超级大的。大到根本不需要降落。）`, scores: [0,1,0,1] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+  {
+    label: '第五日',
+    story: `必须选一个。`,
+    choices: [
+      { text: `红色塑料水桶里飘着一只黄色橡胶手套。另一只在浴缸里，鱼缸里的水已经绿了。一种妥协的、放弃尊严的绿。缸里两条金鱼迟缓地浮着，嘴巴一开一合，好像在对口型。\n（a……然后呢，a之后是什么，我记不住了，字母表，字母表是怎么回事，二十六个，二十六个，从头开始——）`, scores: [1,0,0,1] },
+      { text: `冰箱门上贴满了便利贴，成了一个巨大的、嗡嗡扇出热气的词典，内心却冷得吓人，立在那里，像一块碑。再过无数个世纪，那愚蠢的压缩机才能学会说话。\n（要有耐心。等。等什么？等就对了。等。）`, scores: [0,1,1,0] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+  {
+    label: '第六日',
+    story: `你把它放在舌头底下含了很久。没有味道。以前以为会有的，苦的，或者咸的，总之是什么有资格留在嘴里的东西。但没有。就是一个音节，或者两个，干燥，轻，像药片的外壳。`,
+    choices: [
+      { text: `这东西好像很值钱吧。\n（在哪买的来着？还有库存吗？我能再要一个吗？要两个，备用，不对，要很多个，我全要，给我所有的，我——）`, scores: [1,0,0,1] },
+      { text: `吐出去。\n（落在地上。不用找了。等等…检查一下鞋底？不。不用。走。）`, scores: [0,1,1,0] },
+      { text: `什么都不做`, scores: [0,0,0,0], isC: true },
+    ]
+  },
+];
 
-    // 更新选项按钮
-    const choicesDiv = document.getElementById("choices");
-    choicesDiv.innerHTML = ""; // 先清空
-    scene.choices.forEach(choice => {
-      const btn = document.createElement("button");
-      btn.className = "choice-btn";
-      btn.textContent = choice.text;
-      btn.onclick = () => goTo(choice.next);
-      choicesDiv.appendChild(btn);
-    });
+const ENDINGS = {
+  A: {
+    label: '结局 A · 猴面包树',
+    story: `第七日。
 
-    // 处理结局
-    const endingDiv = document.getElementById("ending");
-    const restartBtn = document.getElementById("restart-btn");
-    if (scene.ending) {
-      endingDiv.textContent = scene.ending;
-      endingDiv.style.display = "block";
-      restartBtn.style.display = "block";
-    } else {
-      endingDiv.style.display = "none";
-      restartBtn.style.display = "none";
-    }
+稀树草原上只有一棵树。
+
+树很大，大到你以为你离它还远，结果不知怎么转眼间已经在它底下了。这种事情经常发生，不只是树——城市也是这样，关系也是这样，麻烦事也是这样，你以为你还在外面，其实早就在里面了，只是没有人通知你。
+
+阳光是干的。草是黄的。远处有什么动物在叫，叫声平坦，像是例行公事。
+
+你抬起头，看了一眼树冠。
+
+然后就是那颗果子。
+
+它落下来的时候没有任何预兆，这一点你觉得还算公平——如果有预兆的话，那才是真正的残忍。据说猴面包树的果子能有好几公斤。你没来得及想这件事。你最后想的是什么？你自己也不确定。可能是那个天气预报，可能是那碗面，可能什么都没有，就是一片很干净的白。
+
+总之。
+
+（很好。总算结束了。）`
+  },
+  B: {
+    label: '结局 B · 档案',
+    story: `第七日。
+
+你以为你摆脱了这一切。
+
+这是个很常见的误解。消失不是这么运作的。消失需要没有人知道你在哪里，需要没有任何系统记录你的热成像，需要你的鞋底不留下任何可以被分析的压强分布。你以为自己做到了哪几条？
+
+那只鸟在你身后三十米处停下来。它停下来的方式很安静，像是一个有教养的人在等你先进门。没瞎的那只好眼在你背上划了一个来回，不痛，就是有点凉。
+
+唉。
+
+你转过身。它也没有转过来，只是那只眼睛跟着你的脸转。
+
+看来是迷路了。这是你想的。不是它，是你——你迷路了，在某个你以为可以悄悄地消失的地方，发现消失本身也是一种记录。
+
+档案更新了，你感觉到了，虽然你不知道这档案是什么，在哪里，也不知道谁在更新。
+
+（追踪中。追踪中。追踪中。你好，你好，请问你现在方便说话吗？）`
+  },
+  C: {
+    label: '结局 C · 加油站',
+    story: `第七日。
+
+路两旁的峡谷在夕阳里是砖红色的，像什么东西的内壁，像是这颗星球吸了口气然后忘记呼出来，就这么撑着，撑了几千万年，把自己撑成了这个颜色。
+
+你把外套搭在肩上，没有穿。不冷，但也不热。正好。
+
+加油站很小，卖水、卖薯片、卖一种你没见过的牌子的口香糖。电台里在放一首你不认识的歌，西班牙语，或者葡萄牙语，总之是某种有很多元音的语言，你听不懂，只觉得每个词都圆润，都是湿的，像是在嘴里含着什么东西唱出来的。你站在那里听了一会儿。没有歌词的意思，就是听那个声音。
+
+你把零钱还给收银员，他冲你点了个头，然后从收银台底下摸了什么东西出来。
+
+车有点旧了，但还能跑很远。油加满了，后备箱里放着你需要的所有东西，轮胎和雨刮都没问题，后视镜里什么都没有，就是那条路，那个峡谷，那个正在变暗的夕阳，越来越小，越来越小，然后你过了一个弯，就什么都看不见了。
+
+你在等什么？
+
+就这样。没有选项，没有括号，没有更多了。风是真实的，方向盘是真实的，前面的路也是真实的，虽然你不知道它通向哪里，但这件事现在不重要。`
+  },
+  D: {
+    label: '结局 D · 原地',
+    story: `第七日。
+
+窗还是那扇窗，光还是那束光，斜着，落在地板上某个你早就认识的角度——你认识它很久了，比你认识大多数人都久，它每年在同一个季节出现，落在同一块地板上，时间差不超过几分钟，从来不爽约，从来不迟到，也从来不问你过得怎么样。
+
+你坐在那里，看着它。
+
+这束光什么都不要。不要你解释，不要你成为什么，不要你往前走或者往后退。它就是来了，落下，待够了，然后走，明年再来。你不需要为它做任何事，它也不会因为你做了什么而改变角度，它能带给你的礼物只有影子。这是你认识的东西里少有的，不因为你而改变的东西。
+
+你把手放在膝盖上。窗外有风，树在动，光跟着动了一下，然后又回来了，落在原来那个位置，差不了几毫米。
+
+就这样。
+
+你不需要走，也不需要留下来——就这么呆着。这件事比你想象的简单，也比你想象的花了更长的时间才弄明白。但现在明白了。现在明白了也不晚。
+
+（好了，接下来想想晚上吃什么吧。）`
+  },
+  E: {
+    label: '结局 E · 隐藏结局',
+    story: `第七日。
+
+你真有耐心。
+
+六天。六天什么都没有做，或者说，六天做了一件最难做的事——什么都不做。
+
+这不是失败，虽然你知道有人会这么认为。什么也不做需要一种特别的勇气，一种不太好看、也不太好解释的勇气，没有办法发社交媒体炫耀，没有办法配图或加注，没有办法用任何你认识的词把它说清楚。
+
+你没有变轻，也没有变重。你没有清除以前所做的一切，也没有再留下什么新的印记。你还是你，原封不动，像一块石头，像一棵还没决定往哪边长的树，像创世之前那片水面，悬浮在半空中，还没有说要有光。
+
+好吧，现在轮到你当那个造物主了。记得穿上你的白袍，记得穿上你的白袍——虽然你可能找不到，或者穿上去也不像，但没关系，祂当年大概也不确定自己在做什么。希望你做得比祂更好。
+
+于是第一日，你说——
+
+（原来还可以这样。原来一直都可以这样。）`
+  }
+};
+
+// ══════════════════════════════════════
+//  游戏状态
+// ══════════════════════════════════════
+
+let scores = [0,0,0,0];  // [重量, 轻盈, 留下, 消失]
+let choiceHistory = [];   // 每日选择的index
+
+// ══════════════════════════════════════
+//  结局判定
+// ══════════════════════════════════════
+
+function resolveEnding() {
+  const [w, l, s, d] = scores;
+  if (w===0 && l===0 && s===0 && d===0) return 'E';
+
+  const wl = w > l ? 'w' : l > w ? 'l' : null;
+  const sd = s > d ? 's' : d > s ? 'd' : null;
+
+  if (wl && sd) {
+    if (wl==='w' && sd==='s') return 'A';
+    if (wl==='w' && sd==='d') return 'B';
+    if (wl==='l' && sd==='d') return 'C';
+    if (wl==='l' && sd==='s') return 'D';
+  }
+  if (!wl && sd) return sd==='s' ? (Math.random()<0.5?'A':'D') : (Math.random()<0.5?'B':'C');
+  if (wl && !sd) return wl==='w' ? (Math.random()<0.5?'A':'B') : (Math.random()<0.5?'C':'D');
+
+  // 两组都平 → 看第六日
+  const d6 = choiceHistory[5];
+  if (d6 === 0) return 'B';
+  if (d6 === 1) return 'D';
+  return null; // 第六日也选了C
+}
+
+// ══════════════════════════════════════
+//  渲染工具
+// ══════════════════════════════════════
+
+function renderText(raw) {
+  return raw
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>')
+    .replace(/（([^）]*)）/g,'<em>（$1）</em>');
+}
+
+function fadeIn() {
+  const story = document.getElementById('story');
+  const choices = document.getElementById('choices');
+  story.classList.remove('visible');
+  choices.classList.remove('visible');
+  void story.offsetWidth;
+  requestAnimationFrame(()=>{
+    story.classList.add('visible');
+    setTimeout(()=>choices.classList.add('visible'), 220);
+  });
+}
+
+// ══════════════════════════════════════
+//  页面：游戏日
+// ══════════════════════════════════════
+
+function showDay(dayIndex) {
+  document.getElementById('app').className = '';
+  const day = DAYS[dayIndex];
+  document.getElementById('day-label').textContent = day.label;
+  document.getElementById('story').innerHTML = renderText(day.story);
+  document.getElementById('restart').style.display = 'none';
+
+  const el = document.getElementById('choices');
+  el.innerHTML = '';
+  day.choices.forEach((c, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-btn' + (c.isC ? ' opt-c' : '');
+    btn.innerHTML = renderText(c.text);
+    btn.onclick = () => onChoice(dayIndex, i);
+    el.appendChild(btn);
+  });
+  fadeIn();
+}
+
+// ══════════════════════════════════════
+//  页面：质问
+// ══════════════════════════════════════
+
+function showConfrontation() {
+  document.getElementById('app').className = 'confrontation';
+  document.getElementById('day-label').textContent = '第六日　·　等一下';
+  document.getElementById('story').innerHTML = renderText('你确定什么都不做？\n\n这是你真实的想法吗？');
+  document.getElementById('restart').style.display = 'none';
+
+  const el = document.getElementById('choices');
+  el.innerHTML = '';
+
+  const yes = document.createElement('button');
+  yes.className = 'choice-btn';
+  yes.textContent = '我确定。';
+  yes.onclick = () => showEnding('E');
+
+  const no = document.createElement('button');
+  no.className = 'choice-btn';
+  no.innerHTML = renderText('我再想想。\n（你在暗示我什么？）');
+  no.onclick = () => showDay(5);
+
+  el.appendChild(yes);
+  el.appendChild(no);
+  fadeIn();
+}
+
+// ══════════════════════════════════════
+//  页面：结局
+// ══════════════════════════════════════
+
+function showEnding(key) {
+  document.getElementById('app').className = '';
+  const ending = ENDINGS[key];
+  document.getElementById('day-label').textContent = ending.label;
+  document.getElementById('story').innerHTML = renderText(ending.story);
+  document.getElementById('choices').innerHTML = '';
+  document.getElementById('restart').style.display = 'block';
+  fadeIn();
+}
+
+// ══════════════════════════════════════
+//  选择处理
+// ══════════════════════════════════════
+
+function onChoice(dayIndex, choiceIndex) {
+  // 如果是重新选第六日，先回滚旧分数
+  if (dayIndex === 5 && choiceHistory[5] !== undefined) {
+    const old = DAYS[5].choices[choiceHistory[5]].scores;
+    scores = scores.map((v,i) => v - old[i]);
   }
 
-  // 游戏从 start 场景开始
-  goTo("start");
+  // 累积新分数
+  const s = DAYS[dayIndex].choices[choiceIndex].scores;
+  scores = scores.map((v,i) => v + s[i]);
+  choiceHistory[dayIndex] = choiceIndex;
 
+  if (dayIndex < 5) {
+    showDay(dayIndex + 1);
+  } else {
+    // 第六日结束，判定
+    const ending = resolveEnding();
+    if (ending) showEnding(ending);
+    else showConfrontation();
+  }
+}
+
+// ══════════════════════════════════════
+//  启动
+// ══════════════════════════════════════
+
+function startGame() {
+  scores = [0,0,0,0];
+  choiceHistory = [];
+  showDay(0);
+}
+
+startGame();
 </script>
 </body>
 </html>
